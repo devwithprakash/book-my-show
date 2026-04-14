@@ -125,10 +125,10 @@
             if (mode === "register") {
                 const name = document.getElementById("name")
                 payload.name = name.value
-                url = "http://localhost:8080/auth/register"
+                url = "/auth/register"
             }
             else {
-                url = "http://localhost:8080/auth/login"
+                url = "/auth/login"
             }
 
             try {
