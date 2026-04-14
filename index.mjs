@@ -6,11 +6,16 @@
 // INSERT INTO seats (isbooked)
 // SELECT 0 FROM generate_series(1, 20);
 
+import "dotenv/config"
 import express from "express";
-import pg from "pg";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
+import { pool } from "./common/config/db.js"
+import authRouter from "./modules/auth/auth.route.js";
+import cookieParser from "cookie-parser";
+import { authenticate } from "./modules/auth/auth.middleware.js";
+import ApiError from "./common/utils/api-error.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -20,35 +25,34 @@ const port = process.env.PORT || 8080;
 // Pool is nothing but group of connections
 // If you pick one connection out of the pool and release it
 // the pooler will keep that connection open for sometime to other clients to reuse
-const pool = new pg.Pool({
-  host: "localhost",
-  port: 5433,
-  user: "postgres",
-  password: "postgres",
-  database: "sql_class_2_db",
-  max: 20,
-  connectionTimeoutMillis: 0,
-  idleTimeoutMillis: 0,
-});
+
 
 const app = new express();
 app.use(cors());
+app.use(express.json())
+app.use(cookieParser())
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
+
+app.get("/auth", (req, res) => {
+  res.sendFile(__dirname + "/auth.html");
+});
+
 //get all seats
-app.get("/seats", async (req, res) => {
+app.get("/seats", authenticate, async (req, res) => {
   const result = await pool.query("select * from seats"); // equivalent to Seats.find() in mongoose
   res.send(result.rows);
 });
 
 //book a seat give the seatId and your name
 
-app.put("/:id/:name", async (req, res) => {
+app.put("/:id/:name", authenticate, async (req, res) => {
   try {
     const id = req.params.id;
     const name = req.params.name;
+
     // payment integration should be here
     // verify payment
     const conn = await pool.connect(); // pick a connection from the pool
@@ -73,6 +77,13 @@ app.put("/:id/:name", async (req, res) => {
     const sqlU = "update seats set isbooked = 1, name = $2 where id = $1";
     const updateResult = await conn.query(sqlU, [id, name]); // Again to avoid SQL INJECTION we are using $1 and $2 as placeholders
 
+    if (!req.user?.id) throw new Error("Unauthorized");
+
+    await conn.query(
+      "insert into bookings (user_id, seat_id) values ($1, $2)",
+      [req.user.id, id]
+    );
+
     //end transaction by committing
     await conn.query("COMMIT");
     conn.release(); // release the connection back to the pool (so we do not keep the connection open unnecessarily)
@@ -82,5 +93,21 @@ app.put("/:id/:name", async (req, res) => {
     res.send(500);
   }
 });
+
+app.use((err, req, res, next) => {
+  if (err instanceof ApiError) {
+    return res.status(err.statusCode).json({
+      success: false,
+      message: err.message
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: "Internal Server Error"
+  });
+});
+
+app.use("/auth", authRouter)
 
 app.listen(port, () => console.log("Server starting on port: " + port));

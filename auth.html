@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Authentication</title>
+    <style>
+        @keyframes floatIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: floatIn 0.6s ease-out both;
+        }
+    </style>
+</head>
+
+<body
+    class="h-screen flex items-center justify-center bg-gradient-to-br from-indigo-950 via-slate-950 to-black font-sans">
+
+    <div class="w-80 bg-white/5 backdrop-blur-xl p-6 rounded-2xl border border-white/10 shadow-2xl space-y-4">
+
+
+        <div class="text-center mb-2">
+            <h1 id="title" class="text-2xl font-bold text-white">Welcome Back</h1>
+            <p id="subtitle" class="text-sm text-slate-400">Login to continue</p>
+        </div>
+
+
+        <div class="flex bg-black/40 p-1 rounded-lg">
+            <button id="loginTab" class="w-1/2 py-1 rounded-md bg-indigo-500 text-white transition">Login</button>
+            <button id="registerTab" class="w-1/2 py-1 rounded-md text-slate-400 transition">Register</button>
+        </div>
+
+        <form id="form" class="space-y-4">
+
+
+            <div id="nameField" class="hidden">
+                <label class="text-sm text-slate-300">Name</label>
+                <input type="text" id="name"
+                    class="w-full mt-1 p-2 px-3 rounded-lg bg-black/40 border border-white/10 text-white focus:border-indigo-400 focus:outline-none"
+                    placeholder="Your name" />
+            </div>
+
+
+            <div>
+                <label class="text-sm text-slate-300">Email</label>
+                <input type="email" id="email"
+                    class="w-full mt-1 p-2 px-3 rounded-lg bg-black/40 border border-white/10 text-white focus:border-indigo-400 focus:outline-none"
+                    placeholder="you@example.com" />
+            </div>
+
+
+            <div>
+                <label class="text-sm text-slate-300">Password</label>
+                <input type="password" id="password"
+                    class="w-full mt-1 p-2 px-3 rounded-lg bg-black/40 border border-white/10 text-white focus:border-indigo-400 focus:outline-none"
+                    placeholder="••••••••" />
+            </div>
+
+
+            <button id="submitBtn" type="submit"
+                class="w-full py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-semibold transition active:scale-95">
+                Login
+            </button>
+
+        </form>
+    </div>
+
+    <script>
+        const loginTab = document.getElementById("loginTab");
+        const registerTab = document.getElementById("registerTab");
+        const nameField = document.getElementById("nameField");
+        const title = document.getElementById("title");
+        const subtitle = document.getElementById("subtitle");
+        const submitBtn = document.getElementById("submitBtn");
+
+        let mode = "login";
+
+        loginTab.addEventListener("click", () => {
+            nameField.classList.add("hidden");
+            mode = "login"
+
+            title.textContent = "Welcome Back";
+            subtitle.textContent = "Login to continue";
+            submitBtn.textContent = "Login";
+
+            loginTab.classList.add("bg-indigo-500", "text-white");
+            registerTab.classList.remove("bg-indigo-500", "text-white");
+            registerTab.classList.add("text-slate-400");
+        });
+
+        registerTab.addEventListener("click", () => {
+            nameField.classList.remove("hidden");
+            mode = "register"
+
+            title.textContent = "Create Account";
+            subtitle.textContent = "Join us today";
+            submitBtn.textContent = "Register";
+
+            registerTab.classList.add("bg-indigo-500", "text-white");
+            loginTab.classList.remove("bg-indigo-500", "text-white");
+            loginTab.classList.add("text-slate-400");
+        });
+
+
+        submitBtn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("email")
+            const password = document.getElementById("password")
+            const payload = { email: email.value, password: password.value }
+
+            let url = ""
+
+            if (mode === "register") {
+                const name = document.getElementById("name")
+                payload.name = name.value
+                url = "http://localhost:8080/auth/register"
+            }
+            else {
+                url = "http://localhost:8080/auth/login"
+            }
+
+            try {
+                const res = await fetch(url, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+
+                const data = await res.json()
+                console.log(data)
+                localStorage.setItem("accessToken", data.data?.token)
+
+                window.location.href = "/"
+            } catch (error) {
+                console.log(error)
+            }
+        })
+    </script>
+</body>
+
+</html>
