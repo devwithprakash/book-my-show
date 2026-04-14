@@ -8,7 +8,7 @@
 
 import "dotenv/config"
 import express from "express";
-import { dirname } from "path";
+import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
 import { pool } from "./common/config/db.js"
@@ -17,7 +17,8 @@ import cookieParser from "cookie-parser";
 import { authenticate } from "./modules/auth/auth.middleware.js";
 import ApiError from "./common/utils/api-error.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const port = process.env.PORT || 8080;
 
@@ -33,11 +34,11 @@ app.use(express.json())
 app.use(cookieParser())
 
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/index.html");
+  res.sendFile(path.join(__dirname, "..", "index.html"));
 });
 
 app.get("/auth", (req, res) => {
-  res.sendFile(__dirname + "/auth.html");
+  res.sendFile(path.join(__dirname, "..", "auth.html"));
 });
 
 //get all seats

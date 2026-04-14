@@ -77,6 +77,7 @@ const login = async ({ email, password }) => {
 
         return { accessToken, refreshToken }
     } catch (error) {
+        console.log(error)
         throw ApiError.serverError()
     }
 }
