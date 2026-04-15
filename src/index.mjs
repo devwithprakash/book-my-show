@@ -1,11 +1,3 @@
-//  CREATE TABLE seats (
-//      id SERIAL PRIMARY KEY,
-//      name VARCHAR(255),
-//      isbooked INT DEFAULT 0
-//  );
-// INSERT INTO seats (isbooked)
-// SELECT 0 FROM generate_series(1, 20);
-
 import "dotenv/config"
 import express from "express";
 import path from "path";
@@ -21,11 +13,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const port = process.env.PORT || 8080;
-
-// Equivalent to mongoose connection
-// Pool is nothing but group of connections
-// If you pick one connection out of the pool and release it
-// the pooler will keep that connection open for sometime to other clients to reuse
 
 
 const app = new express();
@@ -43,12 +30,11 @@ app.get("/auth", (req, res) => {
 
 //get all seats
 app.get("/seats", authenticate, async (req, res) => {
-  const result = await pool.query("select * from seats"); // equivalent to Seats.find() in mongoose
+  const result = await pool.query("select * from seats");
   res.send(result.rows);
 });
 
 //book a seat give the seatId and your name
-
 app.put("/:id/:name", authenticate, async (req, res) => {
   try {
     const id = req.params.id;
